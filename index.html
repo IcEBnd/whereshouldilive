@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Distance Matrix service</title>
+    <!-- TODO(ice): fix :// -> https -->
+      <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.0/angular.min.js"></script>
+      <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&key=AIzaSyB6DvDoqCweMQoEfZIMqK9TdI7tijMlU2M"></script>
+<!--    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&signed_in=true"></script>-->
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #map-canvas {
+        height: 100%;
+        width: 50%;
+      }
+      #content-pane {
+        float:right;
+        width:48%;
+        padding-left: 2%;
+      }
+      #outputDiv {
+        font-size: 11px;
+      }
+      #destinationsDiv {
+        font-size: 11px;        
+      }
+    </style>
+    <script>
+
+angular.module('invoice1', [])
+.controller('InvoiceController', function() {
+});
+
+var map;
+var geocoder;
+var bounds = new google.maps.LatLngBounds();
+var markersArray = [];
+var cache = {};
+
+//var origin1 = new google.maps.LatLng(55.930, -3.118);
+// var origin2 = 'Greenwich, England';
+//var destinationA = 'Stockholm, Sweden';
+//var destinationB = new google.maps.LatLng(50.087, 14.421);
+
+var origin = new google.maps.LatLng(59.353741, 17.886979);
+//var origin2 = 'Lidnersplan 12 112 53 Stockholm';
+var destinations = ['Banvaktsvägen 20 171 48 Solna', 'T-Centralen, Stockholm', 'Arlanda Airport Terminal 5, Stockholm', 'Kungsbron 2 111 22 Stockholm'];
+// var destinationA = 'Banvaktsvägen 20 171 48 Solna';
+// var destinationB = 'T-Centralen, Stockholm';
+// var destinationC = 'ARN, Stockholm';
+
+var destinationIcon = 'https://chart.googleapis.com/chart?chst=d_map_pin_letter&chld=D|FF0000|000000';
+var originIcon = 'https://chart.googleapis.com/chart?chst=d_map_pin_letter&chld=O|FFFF00|000000';
+
+function initialize() {
+  var opts = {
+    center: new google.maps.LatLng(59.33, 18.06),
+    zoom: 10,
+    streetViewControl: false,
+  };
+  map = new google.maps.Map(document.getElementById('map-canvas'), opts);
+  geocoder = new google.maps.Geocoder();
+
+  // Create map click event
+  google.maps.event.addListener(map, 'click', function(event) {
+
+    origin = event.latLng;
+    console.log(origin);
+    calculateDistances();
+
+/*
+      // Add destination (max 9)
+      if (nodes.length >= 9) {
+          alert('Max destinations added');
+          return;
+      }
+
+      // If there are directions being shown, clear them
+      clearDirections();
+
+      // Add a node to map
+      marker = new google.maps.Marker({position: event.latLng, map: map});
+      markers.push(marker);
+      
+      // Store node's lat and lng
+      nodes.push(event.latLng);
+      
+      // Update destination count
+      $('#destinations-count').html(nodes.length);
+*/
+  });
+}
+
+function calculateDistances() {
+  setTimeout(function() {calculateDistance(google.maps.TravelMode.DRIVING, callbackDriving)}, 0);
+  setTimeout(function() {calculateDistance(google.maps.TravelMode.TRANSIT, callbackTransit)}, 0);
+  setTimeout(function() {calculateDistance(google.maps.TravelMode.WALKING, callbackWalking)}, 0);
+}
+
+function calculateDistance(travelMode, callback) {
+  var service = new google.maps.DistanceMatrixService();
+  service.getDistanceMatrix(
+    {
+      origins: [origin],
+      destinations: destinations,
+      travelMode: travelMode,
+      unitSystem: google.maps.UnitSystem.METRIC,
+      avoidHighways: false,
+      avoidTolls: false,
+      durationInTraffic: false
+    }, callback);
+}
+
+function callbackDriving(response, status) {
+  callback(response, status, 'outputDivDriving', true);
+}
+
+function callbackTransit(response, status) {
+  callback(response, status, 'outputDivTransit', false);
+}
+
+function callbackWalking(response, status) {
+  callback(response, status, 'outputDivWalking', false);
+}
+
+function callback(response, status, outputDiv, addMarkers) {
+  if (status != google.maps.DistanceMatrixStatus.OK) {
+    console.log('Error was: ' + status);
+  } else {
+    var origins = response.originAddresses;
+    var destinationsAddresses = response.destinationAddresses;
+    var outputDiv = document.getElementById(outputDiv);
+    outputDiv.innerHTML = '';
+    if (addMarkers) {
+      deleteOverlays();
+    }
+
+    for (var i = 0; i < origins.length; i++) {
+      var results = response.rows[i].elements;
+      if (addMarkers) {
+        addMarker(origins[i], false);
+      }
+      for (var j = 0; j < results.length; j++) {
+        if (addMarkers) {
+          addMarker(destinationsAddresses[j], true);
+        }
+        outputDiv.innerHTML += '<b>' + results[j].duration.text + '</b> to ' + destinationsAddresses[j]
+            + ': ' + results[j].distance.text + ' in '
+            + results[j].duration.text + '<br>';
+      }
+    }
+  }
+}
+
+function addMarker(location, isDestination) {
+  var icon;
+
+  if (isDestination) {
+    icon = destinationIcon;
+  } else {
+    icon = originIcon;
+  }
+
+  // Check if this is cached 
+  if (cache.hasOwnProperty(location)) {
+    console.log("using cache for " + location);
+    addMarkerToMap(cache[location]['results'], cache[location]['icon']);
+  }
+  else {
+    console.log("doing geocoder call for " + location);
+    geocoder.geocode({'address': location}, function(results, status) {
+      if (status == google.maps.GeocoderStatus.OK) {
+        addMarkerToMap(results, icon);
+      } else {
+        console.log('Geocode was not successful for the following reason: '
+          + status);
+      }
+      cache[location] = {'results': results, 'icon': icon};
+    });
+  }
+}
+
+function addMarkerToMap(results, icon) {
+//      bounds.extend(results[0].geometry.location);
+//      map.fitBounds(bounds);
+  var marker = new google.maps.Marker({
+    map: map,
+    position: results[0].geometry.location,
+    icon: icon
+  });
+  markersArray.push(marker);
+}
+
+function deleteOverlays() {
+  for (var i = 0; i < markersArray.length; i++) {
+    markersArray[i].setMap(null);
+  }
+  markersArray = [];
+}
+
+google.maps.event.addDomListener(window, 'load', initialize);
+
+    </script>
+  </head>
+  <body>
+    <div ng-app>
+      <div id="content-pane">
+        <div id="inputs">
+          <p><button type="button" onclick="calculateDistances();">Calculate
+            distances</button></p>
+        </div>
+        <div id="destinationsDiv">
+          <h3>Destinations</h3>
+          <div ng-repeat="d in destinations">{{ d }}</div>
+        </div>
+        <div id="outputDiv">
+          <h3>Driving</h3>
+          <div id="outputDivDriving"></div>
+          <h3>Transit</h3>
+          <div id="outputDivTransit"></div>
+          <h3>Walking</h3>
+          <div id="outputDivWalking"></div>
+        </div>
+      </div>
+    </div>
+    <div id="map-canvas"></div>
+  </body>
+</html>
