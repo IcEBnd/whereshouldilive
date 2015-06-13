@@ -7,15 +7,15 @@
       <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&key=AIzaSyB6DvDoqCweMQoEfZIMqK9TdI7tijMlU2M"></script>
 <!--    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&signed_in=true"></script>-->
     <style>
-      html, body {
+      html, body, #divApp {
         height: 100%;
         margin: 0;
         padding: 0;
       }
 
       #map-canvas {
-        height: 100%;
-        width: 50%;
+        height:100%;
+        width:50%;
       }
       #content-pane {
         float:right;
@@ -31,9 +31,8 @@
     </style>
     <script>
 
-angular.module('invoice1', [])
-.controller('InvoiceController', function() {
-});
+angular.module('locationloclocApp', [])
+.controller('DistanceCtrl', ["$scope", function($scope) {
 
 var map;
 var geocoder;
@@ -48,7 +47,7 @@ var cache = {};
 
 var origin = new google.maps.LatLng(59.353741, 17.886979);
 //var origin2 = 'Lidnersplan 12 112 53 Stockholm';
-var destinations = ['Banvaktsvägen 20 171 48 Solna', 'T-Centralen, Stockholm', 'Arlanda Airport Terminal 5, Stockholm', 'Kungsbron 2 111 22 Stockholm'];
+$scope.destinations = []; //['Banvaktsvägen 20 171 48 Solna', 'T-Centralen, Stockholm', 'Arlanda Airport Terminal 5, Stockholm', 'Kungsbron 2 111 22 Stockholm'];
 // var destinationA = 'Banvaktsvägen 20 171 48 Solna';
 // var destinationB = 'T-Centralen, Stockholm';
 // var destinationC = 'ARN, Stockholm';
@@ -70,7 +69,7 @@ function initialize() {
 
     origin = event.latLng;
     console.log(origin);
-    calculateDistances();
+    $scope.calculateDistances();
 
 /*
       // Add destination (max 9)
@@ -95,7 +94,8 @@ function initialize() {
   });
 }
 
-function calculateDistances() {
+$scope.calculateDistances = function() {
+  console.log("calculateDistances");
   setTimeout(function() {calculateDistance(google.maps.TravelMode.DRIVING, callbackDriving)}, 0);
   setTimeout(function() {calculateDistance(google.maps.TravelMode.TRANSIT, callbackTransit)}, 0);
   setTimeout(function() {calculateDistance(google.maps.TravelMode.WALKING, callbackWalking)}, 0);
@@ -106,7 +106,7 @@ function calculateDistance(travelMode, callback) {
   service.getDistanceMatrix(
     {
       origins: [origin],
-      destinations: destinations,
+      destinations: $scope.destinations,
       travelMode: travelMode,
       unitSystem: google.maps.UnitSystem.METRIC,
       avoidHighways: false,
@@ -202,18 +202,30 @@ function deleteOverlays() {
   markersArray = [];
 }
 
+this.addDestination = function() {
+  var newDestinationArray = this.newDestination.split("\n");
+  for (var i in newDestinationArray) {
+    console.log(newDestinationArray[i]);
+    $scope.destinations.push(newDestinationArray[i]);
+  }
+}
+
 google.maps.event.addDomListener(window, 'load', initialize);
+
+}]);
 
     </script>
   </head>
   <body>
-    <div ng-app>
+    <div ng-app="locationloclocApp" ng-controller="DistanceCtrl as distance" id="divApp" >
       <div id="content-pane">
         <div id="inputs">
-          <p><button type="button" onclick="calculateDistances();">Calculate
+          <p><button type="button" ng-click="calculateDistances()">Calculate
             distances</button></p>
         </div>
         <div id="destinationsDiv">
+          <textarea ng-model="distance.newDestination" rows="5"></textarea>
+          <button class="btn" ng-click="distance.addDestination()">Add destionation</button>
           <h3>Destinations</h3>
           <div ng-repeat="d in destinations">{{ d }}</div>
         </div>
@@ -226,7 +238,7 @@ google.maps.event.addDomListener(window, 'load', initialize);
           <div id="outputDivWalking"></div>
         </div>
       </div>
+      <div id="map-canvas"></div>
     </div>
-    <div id="map-canvas"></div>
   </body>
 </html>
