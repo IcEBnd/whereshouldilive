@@ -22,11 +22,8 @@
         width:48%;
         padding-left: 2%;
       }
-      #outputDiv {
+      div {
         font-size: 11px;
-      }
-      #destinationsDiv {
-        font-size: 11px;        
       }
     </style>
     <script>
@@ -61,27 +58,6 @@ function initialize() {
     origin = event.latLng;
     console.log(origin);
     $scope.calculateDistances();
-
-/*
-      // Add destination (max 9)
-      if (nodes.length >= 9) {
-          alert('Max destinations added');
-          return;
-      }
-
-      // If there are directions being shown, clear them
-      clearDirections();
-
-      // Add a node to map
-      marker = new google.maps.Marker({position: event.latLng, map: map});
-      markers.push(marker);
-      
-      // Store node's lat and lng
-      nodes.push(event.latLng);
-      
-      // Update destination count
-      $('#destinations-count').html(nodes.length);
-*/
   });
 }
 
@@ -210,16 +186,21 @@ google.maps.event.addDomListener(window, 'load', initialize);
   <body>
     <div ng-app="locationloclocApp" ng-controller="DistanceCtrl as distance" id="divApp" >
       <div id="content-pane">
+        <h1>Where should I live?</h1>
+        <div id="destinationsDiv">
+          <textarea ng-model="distance.newDestination" rows="5"></textarea>
+        </div>
         <div id="inputs">
+          <button class="btn" ng-click="distance.addDestination()">Add destination(s)</button>
           <p><button type="button" ng-click="calculateDistances()">Calculate
             distances</button></p>
         </div>
-        <div id="destinationsDiv">
-          <textarea ng-model="distance.newDestination" rows="5"></textarea>
-          <button class="btn" ng-click="distance.addDestination()">Add destionation</button>
+        <div>
           <h3>Destinations</h3>
           <div ng-repeat="d in destinations">{{ d }}</div>
         </div>
+
+
         <div id="outputDiv">
           <h3>Driving</h3>
           <div id="outputDivDriving"></div>
