@@ -66,6 +66,7 @@ $scope.calculateDistances = function() {
   setTimeout(function() {calculateDistance(google.maps.TravelMode.DRIVING, callbackDriving)}, 0);
   setTimeout(function() {calculateDistance(google.maps.TravelMode.TRANSIT, callbackTransit)}, 0);
   setTimeout(function() {calculateDistance(google.maps.TravelMode.WALKING, callbackWalking)}, 0);
+  setTimeout(function() {calculateDistance(google.maps.TravelMode.BICYCLING, callbackBicycling)}, 0);
 }
 
 function calculateDistance(travelMode, callback) {
@@ -92,6 +93,10 @@ function callbackTransit(response, status) {
 
 function callbackWalking(response, status) {
   callback(response, status, 'outputDivWalking', false);
+}
+
+function callbackBicycling(response, status) {
+  callback(response, status, 'outputDivBicycling', false);
 }
 
 function callback(response, status, outputDiv, addMarkers) {
@@ -206,6 +211,8 @@ google.maps.event.addDomListener(window, 'load', initialize);
           <div id="outputDivDriving"></div>
           <h3>Transit</h3>
           <div id="outputDivTransit"></div>
+          <h3>Bicycling</h3>
+          <div id="outputDivBicycling"></div>
           <h3>Walking</h3>
           <div id="outputDivWalking"></div>
         </div>
